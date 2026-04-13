@@ -41,6 +41,7 @@ public final class PromptBuilder {
 
         appendImports(sb, context.getImports());
         appendFields(sb, context.getFieldDeclarations());
+        appendRelatedTypes(sb, context.getRelatedTypeSignatures());
         appendAnnotations(sb, context.getMethodAnnotations());
         appendSuperClass(sb, context.getSuperClassName());
         appendMethodBody(sb, context.getMethodBody());
@@ -67,6 +68,17 @@ public final class PromptBuilder {
         sb.append("### Class Fields (potential dependencies to mock)\n");
         for (String field : fieldDeclarations) {
             sb.append(field).append("\n");
+        }
+        sb.append("\n");
+    }
+
+    private static void appendRelatedTypes(StringBuilder sb, List<String> relatedTypeSignatures) {
+        if (relatedTypeSignatures.isEmpty()) {
+            return;
+        }
+        sb.append("### Related Types (use these exact signatures — do not guess constructors)\n");
+        for (String sig : relatedTypeSignatures) {
+            sb.append("- ").append(sig).append("\n");
         }
         sb.append("\n");
     }

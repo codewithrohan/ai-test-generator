@@ -20,6 +20,7 @@ public final class MethodContext {
     private final String sourceLanguage;
     private final String superClassName;
     private final List<String> methodAnnotations;
+    private final List<String> relatedTypeSignatures;
 
     /** Creates a new MethodContext with all required fields. */
     public MethodContext(
@@ -32,7 +33,8 @@ public final class MethodContext {
             List<String> fieldDeclarations,
             String sourceLanguage,
             String superClassName,
-            List<String> methodAnnotations
+            List<String> methodAnnotations,
+            List<String> relatedTypeSignatures
     ) {
         this.className = Objects.requireNonNull(className, "className must not be null");
         this.methodName = Objects.requireNonNull(methodName, "methodName must not be null");
@@ -46,6 +48,8 @@ public final class MethodContext {
         this.superClassName = superClassName;
         this.methodAnnotations = Collections.unmodifiableList(
                 Objects.requireNonNull(methodAnnotations, "methodAnnotations must not be null"));
+        this.relatedTypeSignatures = Collections.unmodifiableList(
+                Objects.requireNonNull(relatedTypeSignatures, "relatedTypeSignatures must not be null"));
     }
 
     public String getClassName() {
@@ -88,12 +92,16 @@ public final class MethodContext {
         return methodAnnotations;
     }
 
+    public List<String> getRelatedTypeSignatures() {
+        return relatedTypeSignatures;
+    }
+
     /** Returns a human-readable summary for debugging. */
     public String toSummaryString() {
         return String.format(
-                "MethodContext{class='%s', method='%s', language='%s', fields=%d, imports=%d}",
+                "MethodContext{class='%s', method='%s', language='%s', fields=%d, imports=%d, relatedTypes=%d}",
                 className, methodName, sourceLanguage,
-                fieldDeclarations.size(), imports.size()
+                fieldDeclarations.size(), imports.size(), relatedTypeSignatures.size()
         );
     }
 }

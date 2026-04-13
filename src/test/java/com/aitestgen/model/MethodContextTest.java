@@ -25,7 +25,8 @@ public class MethodContextTest {
                 Arrays.asList("private UserRepository repo;"),
                 "java",
                 "BaseService",
-                Arrays.asList("@Override")
+                Arrays.asList("@Override"),
+                Collections.emptyList()
         );
     }
 
@@ -49,7 +50,7 @@ public class MethodContextTest {
         MethodContext ctx = new MethodContext(
                 "MyClass", "doStuff", "void doStuff()", "void doStuff() {}",
                 "com.example", Collections.emptyList(), Collections.emptyList(),
-                "java", null, Collections.emptyList()
+                "java", null, Collections.emptyList(), Collections.emptyList()
         );
         assertNull(ctx.getSuperClassName());
     }
@@ -59,7 +60,7 @@ public class MethodContextTest {
         new MethodContext(
                 null, "m", "sig", "body", "pkg",
                 Collections.emptyList(), Collections.emptyList(),
-                "java", null, Collections.emptyList()
+                "java", null, Collections.emptyList(), Collections.emptyList()
         );
     }
 
@@ -68,7 +69,7 @@ public class MethodContextTest {
         new MethodContext(
                 "C", null, "sig", "body", "pkg",
                 Collections.emptyList(), Collections.emptyList(),
-                "java", null, Collections.emptyList()
+                "java", null, Collections.emptyList(), Collections.emptyList()
         );
     }
 
@@ -105,7 +106,7 @@ public class MethodContextTest {
         MethodContext ctx = new MethodContext(
                 "Empty", "run", "void run()", "void run() {}",
                 "", Collections.emptyList(), Collections.emptyList(),
-                "java", null, Collections.emptyList()
+                "java", null, Collections.emptyList(), Collections.emptyList()
         );
 
         assertTrue(ctx.getImports().isEmpty());

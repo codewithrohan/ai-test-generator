@@ -4,17 +4,21 @@ import com.aitestgen.model.MethodContext;
 
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiImportStatement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Extracts method context from the IntelliJ PSI tree.
@@ -54,6 +58,7 @@ public final class MethodContextExtractor {
         List<String> fieldDeclarations = extractFields(containingClass);
         List<String> annotations = extractAnnotations(method);
         String superClassName = extractSuperClassName(containingClass);
+        List<String> relatedTypeSignatures = extractRelatedTypeSignatures(method, containingClass);
 
         return new MethodContext(
                 className,
@@ -65,7 +70,8 @@ public final class MethodContextExtractor {
                 fieldDeclarations,
                 "java",
                 superClassName,
-                annotations
+                annotations,
+                relatedTypeSignatures
         );
     }
 
@@ -135,5 +141,101 @@ public final class MethodContextExtractor {
             return null;
         }
         return qualifiedName;
+    }
+
+    /**
+     * Extracts constructor and public method signatures from types used in the method.
+     * Helps the AI generate tests with correct constructor argument order.
+     */
+    private static List<String> extractRelatedTypeSignatures(PsiMethod method, PsiClass containingClass) {
+        List<String> signatures = new ArrayList<>();
+        Set<String> processedTypes = new HashSet<>();
+
+        // Collect from method parameters
+        for (PsiParameter param : method.getParameterList().getParameters()) {
+            collectTypeSignatures(param.getType(), processedTypes, signatures);
+        }
+
+        // Collect from return type
+        PsiType returnType = method.getReturnType();
+        if (returnType != null) {
+            collectTypeSignatures(returnType, processedTypes, signatures);
+        }
+
+        // Collect from class fields
+        for (PsiField field : containingClass.getFields()) {
+            collectTypeSignatures(field.getType(), processedTypes, signatures);
+        }
+
+        return signatures;
+    }
+
+    /** Resolves a PsiType to its PsiClass and extracts its signatures. Recurses into generics. */
+    private static void collectTypeSignatures(PsiType type, Set<String> processedTypes, List<String> signatures) {
+        if (!(type instanceof PsiClassType)) {
+            return;
+        }
+        PsiClassType classType = (PsiClassType) type;
+
+        // Recurse into generic type parameters (e.g. List<OrderItem> → also process OrderItem)
+        for (PsiType typeParam : classType.getParameters()) {
+            collectTypeSignatures(typeParam, processedTypes, signatures);
+        }
+
+        PsiClass psiClass = classType.resolve();
+        if (psiClass == null) {
+            return;
+        }
+
+        String qualifiedName = psiClass.getQualifiedName();
+        if (qualifiedName == null) {
+            return;
+        }
+
+        // Skip standard library and common third-party types
+        if (qualifiedName.startsWith("java.") || qualifiedName.startsWith("javax.")
+                || qualifiedName.startsWith("kotlin.") || qualifiedName.startsWith("org.jetbrains.")) {
+            return;
+        }
+
+        // Skip if already processed to avoid duplicates
+        if (!processedTypes.add(qualifiedName)) {
+            return;
+        }
+
+        String simpleName = psiClass.getName();
+        if (simpleName == null) {
+            return;
+        }
+
+        // Extract constructor signatures
+        for (PsiMethod constructor : psiClass.getConstructors()) {
+            signatures.add(simpleName + buildParamSignature(constructor));
+        }
+
+        // Extract public method signatures
+        for (PsiMethod m : psiClass.getMethods()) {
+            if (m.hasModifierProperty(PsiModifier.PUBLIC) && !m.isConstructor()) {
+                PsiType ret = m.getReturnType();
+                String retText = ret != null ? ret.getPresentableText() : "void";
+                signatures.add(simpleName + "." + m.getName() + buildParamSignature(m) + " → " + retText);
+            }
+        }
+    }
+
+    /** Builds a readable parameter list string for a method, e.g. "(String sku, int quantity)". */
+    private static String buildParamSignature(PsiMethod method) {
+        StringBuilder sb = new StringBuilder("(");
+        PsiParameter[] params = method.getParameterList().getParameters();
+        for (int i = 0; i < params.length; i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(params[i].getType().getPresentableText());
+            sb.append(" ");
+            sb.append(params[i].getName());
+        }
+        sb.append(")");
+        return sb.toString();
     }
 }

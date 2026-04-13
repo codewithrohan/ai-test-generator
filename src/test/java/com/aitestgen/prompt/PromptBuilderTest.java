@@ -24,7 +24,8 @@ public class PromptBuilderTest {
                 "void " + methodName + "()",
                 methodBody, "com.example",
                 imports, fields, "java",
-                superClass, annotations
+                superClass, annotations,
+                Collections.emptyList()
         );
     }
 
@@ -160,6 +161,40 @@ public class PromptBuilderTest {
 
         assertFalse(prompt.contains("truncated"));
         assertTrue(prompt.contains(body));
+    }
+
+    @Test
+    public void shouldIncludeRelatedTypesSection() {
+        MethodContext ctx = new MethodContext(
+                "OrderService", "placeOrder",
+                "void placeOrder()",
+                "public void placeOrder() {}",
+                "com.example",
+                Collections.emptyList(),
+                Collections.emptyList(),
+                "java", null,
+                Collections.emptyList(),
+                Arrays.asList(
+                        "OrderItem(String sku, int quantity, double price)",
+                        "Receipt.customerId() → String"
+                )
+        );
+
+        String prompt = PromptBuilder.buildPrompt(ctx);
+
+        assertTrue(prompt.contains("### Related Types"));
+        assertTrue(prompt.contains("OrderItem(String sku, int quantity, double price)"));
+        assertTrue(prompt.contains("Receipt.customerId() → String"));
+    }
+
+    @Test
+    public void shouldOmitRelatedTypesSectionWhenEmpty() {
+        MethodContext ctx = createContext("Svc", "run", "void run() {}",
+                Collections.emptyList(), Collections.emptyList(),
+                null, Collections.emptyList());
+
+        String prompt = PromptBuilder.buildPrompt(ctx);
+        assertFalse(prompt.contains("### Related Types"));
     }
 
     @Test
