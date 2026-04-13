@@ -102,6 +102,45 @@ src/
     └── ...              # Unit tests for each component
 ```
 
+## Design Decisions
+
+### Why Groq over Claude/OpenAI?
+Groq offers a free tier with no credit card required, making the plugin accessible to any developer without billing setup. It also provides fast inference times (~1-2s), which keeps the UX responsive.
+
+### Why direct HTTP instead of an SDK?
+The Anthropic/OpenAI Java SDKs pull in heavy transitive dependency trees. A plugin should be lightweight — OkHttp + Gson are just two small JARs with minimal transitive deps. The API surface we need is a single POST endpoint, so an SDK adds complexity without value.
+
+### Why PSI tree extraction instead of raw text?
+IntelliJ's PSI (Program Structure Interface) gives us structured access to the method's class, package, imports, fields, annotations, and superclass. This lets us build a rich, structured prompt that produces significantly better tests than sending raw source text. The AI knows exactly what dependencies to mock and what patterns to follow.
+
+### Why `relatedTypeSignatures`?
+A common failure mode in AI-generated tests is incorrect constructor arguments or method calls on domain types. By extracting constructor and public method signatures from types used in the method under test, the AI can generate compilable code on the first try.
+
+### Threading model
+IntelliJ requires careful thread management:
+- **PSI reads** run inside `ReadAction.compute()` to hold the read lock
+- **HTTP calls** run on a `Task.Backgroundable` thread to avoid freezing the UI
+- **File writes** dispatch to EDT via `invokeLater` and run inside `WriteCommandAction`
+- **Action updates** use `ActionUpdateThread.BGT` for background thread evaluation with automatic read access
+
+### Security
+API keys are stored in the OS keychain via IntelliJ's `PasswordSafe` API (Windows Credential Manager / macOS Keychain / KDE Wallet). Keys are never written to plain text XML or committed to version control.
+
+## How AI Tools Were Used in Development
+
+This plugin was built with the assistance of **Claude Code** (Anthropic's CLI tool). Here's how AI was involved at each stage:
+
+- **Scaffolding** — Claude Code generated the initial project skeleton (Gradle config, plugin.xml, model classes) based on a detailed implementation plan
+- **Code review** — An AI-powered code reviewer analyzed all source files and caught 10 critical/important issues including threading violations (VFS operations outside WriteAction, PSI access without ReadAction) and incorrect IntelliJ API usage — bugs that would only surface as runtime crashes
+- **Test generation** — Claude Code wrote the initial test suite; MockWebServer-based HTTP tests and BasePlatformTestCase PSI tests were AI-assisted
+- **Iteration** — AI identified that `project.getBaseDir()` was deprecated, that `JavaCodeStyleManager` had a different import path than expected, and that `instrumentationTools()` was no longer needed
+
+**Human decisions throughout:** Architecture choices, API provider selection (Groq), what PSI context to extract, prompt engineering strategy, and the decision to add `relatedTypeSignatures` for better test accuracy.
+
+## Marketplace Status
+
+This plugin has been submitted to the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/31249-ai-test-case-generator) and is currently under moderation review. Once approved, it will be installable directly from IntelliJ's plugin marketplace.
+
 ## License
 
 MIT
