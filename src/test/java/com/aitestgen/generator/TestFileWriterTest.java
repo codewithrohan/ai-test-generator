@@ -28,10 +28,10 @@ public class TestFileWriterTest extends BasePlatformTestCase {
     }
 
     public void testWriteTestFileCreatesFileInCorrectLocation() {
-        boolean result = TestFileWriter.writeTestFile(
+        TestFileWriter.WriteResult result = TestFileWriter.writeTestFile(
                 getProject(), "com.example", "CalcTest", TEST_CODE);
 
-        assertTrue("Expected file write to succeed", result);
+        assertEquals("Expected file write to succeed", TestFileWriter.WriteResult.WRITTEN, result);
 
         VirtualFile baseDir = getContentRoot();
         assertNotNull(baseDir);
@@ -44,11 +44,11 @@ public class TestFileWriterTest extends BasePlatformTestCase {
     }
 
     public void testWriteTestFileWithEmptyPackage() {
-        boolean result = TestFileWriter.writeTestFile(
+        TestFileWriter.WriteResult result = TestFileWriter.writeTestFile(
                 getProject(), "", "SimpleTest",
                 "public class SimpleTest { @Test void test() {} }");
 
-        assertTrue("Expected file write to succeed", result);
+        assertEquals("Expected file write to succeed", TestFileWriter.WriteResult.WRITTEN, result);
 
         VirtualFile baseDir = getContentRoot();
         VirtualFile testFile = baseDir.findFileByRelativePath(
@@ -61,10 +61,11 @@ public class TestFileWriterTest extends BasePlatformTestCase {
                 getProject(), "com.example", "CalcTest",
                 "public class CalcTest { /* first version */ }");
 
-        boolean result = TestFileWriter.writeTestFile(
+        // Dialog is automatically skipped in unit test mode (isUnitTestMode() = true),
+        // so the overwrite proceeds without user interaction.
+        TestFileWriter.WriteResult result = TestFileWriter.writeTestFile(
                 getProject(), "com.example", "CalcTest", TEST_CODE);
-
-        assertTrue("Expected overwrite to succeed", result);
+        assertEquals("Expected overwrite to succeed", TestFileWriter.WriteResult.WRITTEN, result);
 
         VirtualFile baseDir = getContentRoot();
         VirtualFile testFile = baseDir.findFileByRelativePath(

@@ -15,7 +15,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -80,17 +80,18 @@ public final class GenerateTestAction extends AnAction {
                 indicator.setFraction(0.1);
                 indicator.setText("Extracting method context...");
 
-                MethodContext context = ReadAction.compute(() -> {
-                    PsiElement element = psiFile.findElementAt(offset);
-                    if (element == null) {
-                        return null;
-                    }
-                    PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class, false);
-                    if (method == null) {
-                        return null;
-                    }
-                    return MethodContextExtractor.extract(method);
-                });
+                MethodContext context = ApplicationManager.getApplication().runReadAction(
+                        (Computable<MethodContext>) () -> {
+                            PsiElement element = psiFile.findElementAt(offset);
+                            if (element == null) {
+                                return null;
+                            }
+                            PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class, false);
+                            if (method == null) {
+                                return null;
+                            }
+                            return MethodContextExtractor.extract(method);
+                        });
 
                 if (context == null) {
                     ApplicationManager.getApplication().invokeLater(() ->
@@ -123,22 +124,23 @@ public final class GenerateTestAction extends AnAction {
 
                 indicator.setText("Writing test file...");
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    boolean written = TestFileWriter.writeTestFile(
+                    TestFileWriter.WriteResult writeResult = TestFileWriter.writeTestFile(
                             project,
                             context.getPackageName(),
                             result.getTestClassName(),
                             result.getTestCode());
 
-                    if (written) {
+                    if (writeResult == TestFileWriter.WriteResult.WRITTEN) {
                         showNotification(project,
                                 result.getExplanation(),
                                 NotificationType.INFORMATION);
-                    } else {
+                    } else if (writeResult == TestFileWriter.WriteResult.CLIPBOARD_FALLBACK) {
                         showNotification(project,
                                 "Test copied to clipboard (could not create test file). "
                                         + result.getExplanation(),
                                 NotificationType.WARNING);
                     }
+                    // CANCELLED: user declined to overwrite — do nothing
                 });
 
                 indicator.setFraction(1.0);

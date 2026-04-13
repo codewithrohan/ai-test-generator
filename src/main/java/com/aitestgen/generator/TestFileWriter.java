@@ -1,9 +1,11 @@
 package com.aitestgen.generator;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
@@ -23,6 +25,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class TestFileWriter {
 
+    /** Result of a writeTestFile call. */
+    public enum WriteResult {
+        /** File was written successfully. */
+        WRITTEN,
+        /** File could not be written; code was copied to the clipboard instead. */
+        CLIPBOARD_FALLBACK,
+        /** User declined to overwrite an existing file; nothing was changed. */
+        CANCELLED
+    }
+
     private TestFileWriter() {
         // utility class
     }
@@ -30,40 +42,54 @@ public final class TestFileWriter {
     /**
      * Writes generated test code to the appropriate test file.
      * Must be called on the EDT (Event Dispatch Thread).
+     * Shows a confirmation dialog before overwriting an existing file.
      *
-     * @return true if the file was written successfully, false if clipboard fallback was used
+     * @return {@link WriteResult} indicating outcome
      */
-    public static boolean writeTestFile(
+    public static WriteResult writeTestFile(
             Project project,
             String packageName,
             String testClassName,
             String testCode
     ) {
+        String fileName = testClassName + ".java";
+
+        // Read-only pre-check — confirm before overwriting any existing file.
+        // Dialog is suppressed in unit test mode; tests always proceed with overwrite.
+        VirtualFile existing = findExistingTestFile(project, packageName, fileName);
+        if (existing != null && !ApplicationManager.getApplication().isUnitTestMode()) {
+            int answer = Messages.showYesNoDialog(
+                    project,
+                    "'" + fileName + "' already exists. Overwrite it?",
+                    "Overwrite Existing Test File",
+                    Messages.getWarningIcon()
+            );
+            if (answer != Messages.YES) {
+                return WriteResult.CANCELLED;
+            }
+        }
+
         AtomicBoolean success = new AtomicBoolean(false);
         try {
             WriteCommandAction.runWriteCommandAction(project, "Generate Test", null, () -> {
                 VirtualFile testRoot = findOrCreateTestRoot(project);
                 if (testRoot == null) {
-                    copyToClipboard(testCode);
                     return;
                 }
 
                 VirtualFile packageDir = findOrCreatePackageDir(testRoot, packageName);
                 if (packageDir == null) {
-                    copyToClipboard(testCode);
                     return;
                 }
 
                 PsiDirectory psiDir = PsiManager.getInstance(project).findDirectory(packageDir);
                 if (psiDir == null) {
-                    copyToClipboard(testCode);
                     return;
                 }
 
-                String fileName = testClassName + ".java";
-                PsiFile existingFile = psiDir.findFile(fileName);
-                if (existingFile != null) {
-                    existingFile.delete();
+                PsiFile existingPsi = psiDir.findFile(fileName);
+                if (existingPsi != null) {
+                    existingPsi.delete(); // safe — user confirmed above
                 }
 
                 PsiFile testFile = PsiFileFactory.getInstance(project)
@@ -79,12 +105,32 @@ public final class TestFileWriter {
 
             if (!success.get()) {
                 copyToClipboard(testCode);
+                return WriteResult.CLIPBOARD_FALLBACK;
             }
-            return success.get();
+            return WriteResult.WRITTEN;
         } catch (Exception e) {
             copyToClipboard(testCode);
-            return false;
+            return WriteResult.CLIPBOARD_FALLBACK;
         }
+    }
+
+    /**
+     * Read-only check: returns the VirtualFile if a test file already exists at the
+     * conventional path, or null if the path is clear.
+     */
+    private static VirtualFile findExistingTestFile(Project project, String packageName, String fileName) {
+        VirtualFile[] roots = ProjectRootManager.getInstance(project).getContentRoots();
+        if (roots.length == 0) {
+            return null;
+        }
+        VirtualFile testJava = roots[0].findFileByRelativePath("src/test/java");
+        if (testJava == null) {
+            return null;
+        }
+        String relativePath = (packageName != null && !packageName.isEmpty())
+                ? packageName.replace('.', '/') + "/" + fileName
+                : fileName;
+        return testJava.findFileByRelativePath(relativePath);
     }
 
     /** Finds the src/test/java directory relative to the project content root. */

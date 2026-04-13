@@ -1,38 +1,78 @@
 <idea-plugin>
     <id>com.aitestgen.ai-test-generator</id>
     <name>AI Test Case Generator</name>
-    <vendor email="rohan@aitestgen.dev" url="https://github.com/aitestgen">aitestgen</vendor>
+    <vendor email="rohan@aitestgen.dev" url="https://github.com/codewithrohan/ai-test-generator">AiTestGen</vendor>
     <description><![CDATA[
-        <b>AI Test Case Generator</b> creates comprehensive JUnit 5 unit tests for your Java methods
-        using AI (Groq API).<br/><br/>
+        <b>AI Test Case Generator</b> automatically writes JUnit 5 unit tests for your Java methods
+        directly inside IntelliJ IDEA, eliminating the repetitive work of authoring test boilerplate
+        by hand.
 
-        <b>How to use:</b>
+        <br/><br/>
+        Place the caret anywhere inside a Java method, right-click, and choose
+        <b>Generate Unit Test with AI</b>. The plugin inspects the method signature, parameters,
+        return type, annotations, field dependencies, and imports using IntelliJ's PSI engine, then
+        sends that enriched context to the Groq AI API. Within seconds, a complete test class is
+        written to the correct <code>src/test/java/</code> location — matching your package structure
+        automatically. If the file cannot be placed on disk, the generated code falls back to the
+        clipboard so you never lose the output.
+
+        <br/><br/>
+        <b>What each generated test class includes:</b>
         <ul>
-            <li>Place your caret inside any Java method</li>
-            <li>Right-click &rarr; <b>Generate Unit Test with AI</b> (or Alt+Insert)</li>
-            <li>Test file is created at the correct <code>src/test/java/</code> path</li>
+            <li><b>Happy-path tests</b> — valid inputs that exercise the main logic branch</li>
+            <li><b>Edge-case tests</b> — null inputs, empty collections, boundary values, and zero</li>
+            <li><b>Error-case tests</b> — invalid arguments, expected exceptions, and failure paths</li>
+            <li><b>Mockito setup</b> — dependencies are stubbed with <code>@Mock</code> and <code>@InjectMocks</code></li>
+            <li><b>Readable test names</b> — every method carries a <code>@DisplayName</code> that reads like a sentence</li>
+            <li><b>Arrange-Act-Assert structure</b> — each test body follows the standard AAA pattern</li>
         </ul>
 
-        <b>What you get:</b>
+        <b>Requirements:</b>
         <ul>
-            <li>Happy path, edge case, and error case tests</li>
-            <li>Mockito mocks for dependencies</li>
-            <li>Descriptive @DisplayName annotations</li>
-            <li>Arrange-Act-Assert pattern</li>
+            <li>IntelliJ IDEA 2024.1 or later (Community or Ultimate)</li>
+            <li>Java project with JUnit 5 and Mockito on the test classpath</li>
+            <li>A Groq API key (free tier available at console.groq.com)</li>
         </ul>
 
-        Configure your API key in <b>Settings &gt; Tools &gt; AI Test Generator</b>.
+        <b>Setup (one time):</b>
+        <ol>
+            <li>Open <b>Settings / Preferences &rarr; Tools &rarr; AI Test Generator</b></li>
+            <li>Paste your Groq API key</li>
+            <li>Optionally select a different Groq model or adjust the max-token limit</li>
+        </ol>
+
+        Your API key is stored using IntelliJ's built-in <b>PasswordSafe</b> credential store
+        and is never written to disk in plain text or included in project files.
+
+        <br/><br/>
+        <b>Privacy notice:</b> When you invoke the action, the plugin sends the following data from
+        your project to the Groq API (api.groq.com), a third-party service operated by Groq, Inc.:
+        the method body, class and package name, field declarations, imports, annotations, and
+        related type signatures of the method under test. No other files or project data are
+        transmitted. Please review Groq's privacy policy before use.
     ]]></description>
 
     <change-notes><![CDATA[
+        <b>0.1.2</b> — Stability and safety improvements
+        <ul>
+            <li>Confirmation dialog shown before overwriting an existing test file</li>
+            <li>Improved performance — HTTP connection pool is now reused across calls</li>
+        </ul>
+
+        <b>0.1.1</b> — Compatibility update
+        <ul>
+            <li>Verified and confirmed compatible with IntelliJ IDEA 2024.1 through 2026.1</li>
+            <li>Resolved JetBrains Marketplace compatibility verifier warnings</li>
+        </ul>
+
         <b>0.1.0</b> — Initial release
         <ul>
-            <li>Generate JUnit 5 tests from any Java method</li>
-            <li>PSI-based context extraction (imports, fields, annotations, superclass, related types)</li>
+            <li>Generate JUnit 5 tests from any Java method via right-click or Alt+Insert</li>
+            <li>PSI-based context extraction — reads imports, fields, annotations, superclass, and related types</li>
             <li>Groq API integration with configurable model and token limits</li>
-            <li>Automatic test file placement at conventional path</li>
-            <li>Clipboard fallback when file creation is not possible</li>
-            <li>Secure API key storage via IDE PasswordSafe</li>
+            <li>Automatic test file placement at the conventional <code>src/test/java/</code> path</li>
+            <li>Clipboard fallback when the test file cannot be created on disk</li>
+            <li>Secure API key storage via the IDE PasswordSafe credential store</li>
         </ul>
     ]]></change-notes>
 
@@ -55,7 +95,7 @@
             id="com.aitestgen.action.GenerateTestAction"
             class="com.aitestgen.action.GenerateTestAction"
             text="Generate Unit Test with AI"
-            description="Generate unit tests for the selected method using Claude AI">
+            description="Generate JUnit 5 unit tests for the method at the caret using Groq AI">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="GenerateGroup" anchor="last"/>
         </action>

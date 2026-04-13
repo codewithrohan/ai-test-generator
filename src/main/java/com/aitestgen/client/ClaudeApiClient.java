@@ -41,16 +41,23 @@ public final class ClaudeApiClient {
     private static final int READ_TIMEOUT_SECONDS = 60;
     private static final int WRITE_TIMEOUT_SECONDS = 10;
 
+    /**
+     * Shared client reused across all action invocations.
+     * OkHttpClient manages its own thread pool and connection pool — creating a new
+     * instance per call wastes resources and prevents keep-alive reuse.
+     */
+    private static final OkHttpClient SHARED_HTTP_CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build();
+
     private final OkHttpClient httpClient;
     private final Gson gson;
 
-    /** Creates a client with default timeout configuration. */
+    /** Creates a client using the shared OkHttpClient. */
     public ClaudeApiClient() {
-        this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .build();
+        this.httpClient = SHARED_HTTP_CLIENT;
         this.gson = new Gson();
     }
 

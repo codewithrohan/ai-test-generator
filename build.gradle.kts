@@ -50,9 +50,8 @@ intellijPlatform {
             sinceBuild = providers.gradleProperty("pluginSinceBuild")
             untilBuild = providers.gradleProperty("pluginUntilBuild")
         }
-        description = "Generate unit tests for Java methods using Claude AI"
         vendor {
-            name = "aitestgen"
+            name = "AiTestGen"
         }
     }
 }
