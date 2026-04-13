@@ -1,6 +1,11 @@
 # AI Test Generator — IntelliJ IDEA Plugin
 
+[![JetBrains Plugin](https://img.shields.io/jetbrains/plugin/v/31249-ai-test-case-generator.svg)](https://plugins.jetbrains.com/plugin/31249-ai-test-case-generator)
+[![JetBrains Plugin Downloads](https://img.shields.io/jetbrains/plugin/d/31249-ai-test-case-generator.svg)](https://plugins.jetbrains.com/plugin/31249-ai-test-case-generator)
+
 An IntelliJ IDEA plugin that automatically generates comprehensive JUnit 5 unit tests for Java methods using the Groq AI API (free, no credit card required).
+
+**[Install from JetBrains Marketplace](https://plugins.jetbrains.com/plugin/31249-ai-test-case-generator)**
 
 ## What It Does
 
@@ -37,7 +42,15 @@ Generated tests include:
 
 ## Installation
 
-### Option 1 — Build from source
+### Option 1 — JetBrains Marketplace (recommended)
+
+1. In IntelliJ: Settings → Plugins → Marketplace
+2. Search for **"AI Test Case Generator"**
+3. Click Install → Restart IDE
+
+Or install directly: [AI Test Case Generator on JetBrains Marketplace](https://plugins.jetbrains.com/plugin/31249-ai-test-case-generator)
+
+### Option 2 — Build from source
 
 1. Clone the repository:
    ```bash
