@@ -1,0 +1,35 @@
+<idea-plugin>
+    <id>com.aitestgen.ai-test-generator</id>
+    <name>AI Test Case Generator</name>
+    <vendor>aitestgen</vendor>
+    <description><![CDATA[
+        Generate comprehensive unit tests for Java methods using Claude AI.
+        Select a method, right-click, and choose "Generate Unit Test with AI" to
+        automatically create test skeletons with happy path, edge cases, and mock suggestions.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService
+            serviceImplementation="com.aitestgen.settings.PluginSettingsState"/>
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.aitestgen.settings.PluginSettingsConfigurable"
+            id="com.aitestgen.settings.PluginSettingsConfigurable"
+            displayName="AI Test Generator"/>
+        <notificationGroup id="AiTestGenerator" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <action
+            id="com.aitestgen.action.GenerateTestAction"
+            class="com.aitestgen.action.GenerateTestAction"
+            text="Generate Unit Test with AI"
+            description="Generate unit tests for the selected method using Claude AI">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="GenerateGroup" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
