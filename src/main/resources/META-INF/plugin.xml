@@ -1,12 +1,40 @@
 <idea-plugin>
     <id>com.aitestgen.ai-test-generator</id>
     <name>AI Test Case Generator</name>
-    <vendor>aitestgen</vendor>
+    <vendor email="rohan@aitestgen.dev" url="https://github.com/aitestgen">aitestgen</vendor>
     <description><![CDATA[
-        Generate comprehensive unit tests for Java methods using Claude AI.
-        Select a method, right-click, and choose "Generate Unit Test with AI" to
-        automatically create test skeletons with happy path, edge cases, and mock suggestions.
+        <b>AI Test Case Generator</b> creates comprehensive JUnit 5 unit tests for your Java methods
+        using AI (Groq API).<br/><br/>
+
+        <b>How to use:</b>
+        <ul>
+            <li>Place your caret inside any Java method</li>
+            <li>Right-click &rarr; <b>Generate Unit Test with AI</b> (or Alt+Insert)</li>
+            <li>Test file is created at the correct <code>src/test/java/</code> path</li>
+        </ul>
+
+        <b>What you get:</b>
+        <ul>
+            <li>Happy path, edge case, and error case tests</li>
+            <li>Mockito mocks for dependencies</li>
+            <li>Descriptive @DisplayName annotations</li>
+            <li>Arrange-Act-Assert pattern</li>
+        </ul>
+
+        Configure your API key in <b>Settings &gt; Tools &gt; AI Test Generator</b>.
     ]]></description>
+
+    <change-notes><![CDATA[
+        <b>0.1.0</b> — Initial release
+        <ul>
+            <li>Generate JUnit 5 tests from any Java method</li>
+            <li>PSI-based context extraction (imports, fields, annotations, superclass, related types)</li>
+            <li>Groq API integration with configurable model and token limits</li>
+            <li>Automatic test file placement at conventional path</li>
+            <li>Clipboard fallback when file creation is not possible</li>
+            <li>Secure API key storage via IDE PasswordSafe</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>

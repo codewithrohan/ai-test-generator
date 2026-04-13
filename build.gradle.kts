@@ -38,6 +38,10 @@ java {
 }
 
 intellijPlatform {
+    publishing {
+        token = providers.gradleProperty("jetbrainsMarketplaceToken")
+    }
+
     pluginConfiguration {
         id = "com.aitestgen.ai-test-generator"
         name = providers.gradleProperty("pluginName")
